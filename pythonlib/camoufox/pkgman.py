@@ -805,14 +805,7 @@ def camoufox_path(download_if_missing: bool = True) -> Path:
     """
     Full path to the active camoufox folder
     """
-    from .multiversion import COMPAT_FLAG, get_active_path
-
-    # Clean up incompatible old data directory
-    if os.path.exists(INSTALL_DIR) and os.listdir(INSTALL_DIR) and not COMPAT_FLAG.exists():
-        import shutil
-
-        rprint("Cleaning old data...", fg="yellow")
-        shutil.rmtree(INSTALL_DIR)
+    from .multiversion import get_active_path
 
     active = get_active_path()
     if active and Version.from_path(active).is_supported():

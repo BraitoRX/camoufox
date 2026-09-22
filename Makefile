@@ -4,12 +4,12 @@ export
 cf_source_dir := camoufox-$(version)-$(release)
 ff_source_tarball := firefox-$(version).source.tar.xz
 
-debs := python3 python3-dev python3-pip p7zip-full golang-go msitools wget aria2 libsqlite3-dev
-rpms := python3 python3-devel p7zip golang msitools wget aria2 sqlite-devel
-pacman := python python-pip p7zip go msitools wget aria2 sqlite
+debs := python3 python3-dev python3-pip p7zip-full msitools wget aria2 libsqlite3-dev
+rpms := python3 python3-devel p7zip msitools wget aria2 sqlite-devel
+pacman := python python-pip p7zip msitools wget aria2 sqlite
 
 .PHONY: help fetch setup setup-minimal clean set-target distclean build package \
-        build-launcher check-arch revert edits run bootstrap mozbootstrap dir \
+        check-arch revert edits run bootstrap mozbootstrap dir \
         package-linux package-macos package-windows vcredist_arch patch unpatch \
         workspace check-arg edit-cfg ff-dbg tests update-ubo-assets generate-assets-car \
         setup-macos-sdk
@@ -23,7 +23,6 @@ help:
 	@echo "  dir             - Prepare Camoufox source directory with BUILD_TARGET"
 	@echo "  revert          - Kill all working changes"
 	@echo "  edits           - Camoufox developer UI"
-	@echo "  build-launcher  - Build launcher"
 	@echo "  clean           - Remove build artifacts"
 	@echo "  distclean       - Remove everything including downloads"
 	@echo "  build           - Build Camoufox"
@@ -151,9 +150,6 @@ check-arch:
 		exit 1; \
 	fi
 
-build-launcher: check-arch
-	cd legacy/launcher && bash build.sh $(arch) $(os)
-
 package-linux:
 	python3 scripts/package.py linux \
 		--includes \
@@ -189,15 +185,7 @@ package-windows:
 		--arch $(arch) \
 		--fonts macos linux
 
-run-launcher:
-	rm -rf $(cf_source_dir)/obj-x86_64-pc-linux-gnu/dist/bin/launch;
-	make build-launcher arch=x86_64 os=linux;
-	cp legacy/launcher/dist/launch $(cf_source_dir)/obj-x86_64-pc-linux-gnu/dist/bin/launch;
-	$(cf_source_dir)/obj-x86_64-pc-linux-gnu/dist/bin/launch
-
 run-pw:
-	rm -rf $(cf_source_dir)/obj-x86_64-pc-linux-gnu/dist/bin/launch;
-	make build-launcher arch=x86_64 os=linux;
 	python3 scripts/run-pw.py \
 		--version $(version) \
 		--release $(release)
@@ -257,8 +245,7 @@ stage-fonts:
 
 unbusy:
 	rm -rf $(cf_source_dir)/obj-x86_64-pc-linux-gnu/dist/bin/camoufox-bin \
-		$(cf_source_dir)/obj-x86_64-pc-linux-gnu/dist/bin/camoufox \
-		$(cf_source_dir)/obj-x86_64-pc-linux-gnu/dist/bin/launch
+		$(cf_source_dir)/obj-x86_64-pc-linux-gnu/dist/bin/camoufox
 
 path:
 	@realpath $(cf_source_dir)/obj-x86_64-pc-linux-gnu/dist/bin/camoufox-bin

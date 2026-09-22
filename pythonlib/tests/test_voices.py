@@ -76,17 +76,6 @@ class TestLinuxSpeechdUris:
         assert all(v["isLocalService"] for v in self.lin)
 
 
-def test_normalize_preset_voices_converts_strings():
-    # Presets historically store "Name:lang:type" strings.
-    out = _normalize_preset_voices(
-        ["Albert:en-US:local", "Alice:it-IT:local"], "macos"
-    )
-    assert all(_REQUIRED_FIELDS <= set(v.keys()) for v in out)
-    assert out[0]["name"] == "Albert"
-    assert out[0]["lang"] == "en-US"
-    assert sum(1 for v in out if v["isDefault"]) == 1
-
-
 def test_normalize_preset_voices_passes_through_objects():
     obj = {
         "name": "Alex",
@@ -96,6 +85,18 @@ def test_normalize_preset_voices_passes_through_objects():
         "isLocalService": True,
     }
     out = _normalize_preset_voices([obj], "macos")
+    assert out == [obj]
+
+
+def test_normalize_preset_voices_skips_non_objects():
+    obj = {
+        "name": "Alex",
+        "lang": "en-US",
+        "voiceUri": "urn:moz-tts:osx:alex",
+        "isDefault": True,
+        "isLocalService": True,
+    }
+    out = _normalize_preset_voices(["Albert:en-US:local", obj], "macos")
     assert out == [obj]
 
 

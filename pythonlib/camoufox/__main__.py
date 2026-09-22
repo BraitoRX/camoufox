@@ -2,7 +2,6 @@
 CLI package manager for Camoufox
 """
 
-from collections import Counter
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as pkg_version
 from os import environ
@@ -22,7 +21,6 @@ from .geolocation import (
 )
 from .multiversion import (
     BROWSERS_DIR,
-    COMPAT_FLAG,
     CONFIG_FILE,
     REPO_CACHE_FILE,
     InstalledVersion,
@@ -253,13 +251,6 @@ def fetch(version):
       camoufox fetch                         # install active version
       camoufox fetch official/135.0-beta.25  # install specific version
     """
-    # Clean up incompatible old data directory
-    if INSTALL_DIR.exists() and any(INSTALL_DIR.iterdir()) and not COMPAT_FLAG.exists():
-        import shutil
-
-        rprint("Cleaning old data...", fg="yellow")
-        shutil.rmtree(INSTALL_DIR)
-
     _do_sync()
 
     cache = load_repo_cache()
@@ -477,8 +468,7 @@ def set_cmd(specifier, geoip):
             return
         ctype = "prerelease" if ver_data.get("is_prerelease") else "stable"
         vb = f"{ver_data['version']}-{ver_data['build']}"
-        count = sum(1 for x in repo_data.get("versions", []) if f"{x['version']}-{x['build']}" == vb)
-        inst = find_install(vb, ver_data.get("sha256"), list_installed(), count)
+        inst = find_install(vb, ver_data.get("sha256"), list_installed())
         _set_pinned(repo_data["name"], ctype, ver_data, inst, sha=sha)
         return
 
@@ -579,14 +569,13 @@ def set_cmd(specifier, geoip):
 
         elif isinstance(action, tuple) and action[0] == "pin":
             _, rname, ctype, versions = action
-            vb_counts = Counter(f"{x['version']}-{x['build']}" for x in versions)
 
             v_choices = []
             for v in versions:
                 vb = f"{v['version']}-{v['build']}"
                 sha = v.get("sha256") or ""
                 date = format_asset_date(v.get("created_at"))
-                inst = find_install(vb, v.get("sha256"), installed_list, vb_counts[vb])
+                inst = find_install(vb, v.get("sha256"), installed_list)
                 is_pinned = pinned == vb and pinned_sha == (sha or None)
                 if is_pinned:
                     color, bold, status = "green", True, "(pinned)"
@@ -616,7 +605,7 @@ def set_cmd(specifier, geoip):
 
             ver_data = v_answer["version"]
             vb = f"{ver_data['version']}-{ver_data['build']}"
-            inst = find_install(vb, ver_data.get("sha256"), installed_list, vb_counts[vb])
+            inst = find_install(vb, ver_data.get("sha256"), installed_list)
             _set_pinned(rname, ctype, ver_data, inst, sha=ver_data.get("sha256"))
             return
 

@@ -20,7 +20,6 @@ def _install(tmp_path, monkeypatch, layout, build, floor):
     """Build an install dir in the given layout and point the library at it."""
     root = tmp_path / "cache"
     root.mkdir()
-    (root / ".0.5_FLAG").write_text("")
     (root / "repo_cache.json").write_text("{}")
 
     if layout == "versioned":
@@ -39,7 +38,6 @@ def _install(tmp_path, monkeypatch, layout, build, floor):
         monkeypatch.setattr(module, "INSTALL_DIR", root)
     monkeypatch.setattr(multiversion, "BROWSERS_DIR", root / "browsers")
     monkeypatch.setattr(multiversion, "CONFIG_FILE", root / "config.json")
-    monkeypatch.setattr(multiversion, "COMPAT_FLAG", root / ".0.5_FLAG")
     monkeypatch.setattr(pkgman, "VERSION_MIN", pkgman.Version(build=floor))
     return root
 

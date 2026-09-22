@@ -6,7 +6,6 @@ import os
 import shlex
 import shutil
 import tempfile
-from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
@@ -22,7 +21,6 @@ from .pkgman import INSTALL_DIR, OS_NAME, Version, rprint, unzip, verify_sha256
 BROWSERS_DIR: Path = INSTALL_DIR / "browsers"
 CONFIG_FILE: Path = INSTALL_DIR / "config.json"
 REPO_CACHE_FILE: Path = INSTALL_DIR / "repo_cache.json"
-COMPAT_FLAG: Path = INSTALL_DIR / ".0.5_FLAG"
 
 
 def load_config() -> Dict:
@@ -195,7 +193,7 @@ class InstalledVersion:
         return changes
 
 
-def version_folder_name(version: str, build: str, sha8: str = "") -> str:
+def version_folder_name(version: str, build: str, sha8: str) -> str:
     """
     Install folder name with an optional sha8 suffix
     """
@@ -204,23 +202,15 @@ def version_folder_name(version: str, build: str, sha8: str = "") -> str:
 
 
 def _match_install(
-    full: str, sha256: Optional[str], by_folder: Dict[str, 'InstalledVersion'], count: int
+    full: str, sha256: Optional[str], by_folder: Dict[str, 'InstalledVersion']
 ) -> Optional['InstalledVersion']:
     """
     Get the installed folder for a catalog item
-    Falls back to version-build/ (without the sha8) for backwards compatibility
     """
     sha8 = (sha256 or "")[:8]
-    if sha8:
-        exact = by_folder.get(f"{full}-{sha8}")
-        if exact is not None:
-            return exact
-    legacy = by_folder.get(full)
-    if legacy is None:
+    if not sha8:
         return None
-    if legacy.sha256:
-        return legacy if legacy.sha256 == sha256 else None
-    return legacy if count <= 1 else None
+    return by_folder.get(f"{full}-{sha8}")
 
 
 def classify_installs(
@@ -230,14 +220,12 @@ def classify_installs(
     Match each catalog item to an install folder.
     Returns matches and any orphaned leftovers
     """
-    counts = Counter(v.version.full_string for v in versions)
     by_folder = {iv.path.name: iv for iv in installed}
 
     row_inst: List[Optional['InstalledVersion']] = []
     matched: set = set()
     for v in versions:
-        full = v.version.full_string
-        inst = _match_install(full, v.sha256, by_folder, counts[full])
+        inst = _match_install(v.version.full_string, v.sha256, by_folder)
         row_inst.append(inst)
         if inst is not None:
             matched.add(inst.path.name)
@@ -246,20 +234,19 @@ def classify_installs(
     for iv in installed:
         if iv.path.name in matched:
             continue
-        in_catalog = counts[iv.version.full_string] > 0
-        note = "date unknown" if in_catalog and not iv.sha256 else "unavailable"
+        note = "date unknown" if not iv.sha256 else "unavailable"
         extras.append((iv, note))
 
     return row_inst, extras
 
 
 def find_install(
-    version_build: str, sha256: Optional[str], installed: List['InstalledVersion'], count: int = 1
+    version_build: str, sha256: Optional[str], installed: List['InstalledVersion']
 ) -> Optional['InstalledVersion']:
     """
-    Installed version for a single version-build and sha, legacy folder allowed
+    Installed version for a single version-build and sha
     """
-    return _match_install(version_build, sha256, {iv.path.name: iv for iv in installed}, count)
+    return _match_install(version_build, sha256, {iv.path.name: iv for iv in installed})
 
 
 def find_installed_by_build(
@@ -448,9 +435,6 @@ def install_versioned(fetcher, replace: bool = False) -> bool:
             os.system(f'chmod -R 755 {shlex.quote(str(install_path))}')  # nosec
 
         set_active(f"browsers/{repo_name}/{version_folder}")
-
-        # Mark the install dir as compatible with this version
-        COMPAT_FLAG.touch()
 
         rprint(f'\nCamoufox v{fetcher.verstr} installed.', fg="green")
         rprint(f'Path: {install_path}', fg="green")

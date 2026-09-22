@@ -186,7 +186,7 @@ def get_env_vars(
         }
         os_dir = directory_map.get(user_agent_os, user_agent_os)
 
-        # v150+ uses "fontconfig/" (matching the Go launcher); older bundles shipped "fontconfigs/".
+        # v150+ uses "fontconfig/"; older bundles shipped "fontconfigs/".
         def _bundle_path(*parts: str) -> str:
             if path:
                 return str(path.parent.joinpath(*parts))
@@ -972,8 +972,7 @@ def launch_options(
         LeakWarning.warn('disable_coop', i_know_what_im_doing)
         firefox_user_prefs['browser.tabs.remote.useCrossOriginOpenerPolicy'] = False
 
-    # Allow allow_webgl parameter for backwards compatibility
-    if block_webgl or launch_options.pop('allow_webgl', True) is False:
+    if block_webgl:
         firefox_user_prefs['webgl.disabled'] = True
         LeakWarning.warn('block_webgl', i_know_what_im_doing)
     else:

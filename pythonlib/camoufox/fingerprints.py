@@ -278,39 +278,13 @@ def _generate_random_voice_subset(
 def _normalize_preset_voices(
     voices: Any, target_os: str
 ) -> List[Dict[str, Any]]:
-    """Coerce a preset's `speechVoices` into MaskConfig voice objects.
-
-    Presets historically store voices as "Name:lang:type" strings, which the
-    C++ MaskConfig::MVoices() silently drops (it needs full objects). Convert
-    them; pass through entries that are already objects.
     """
-    os_key = {'macos': 'mac', 'windows': 'win', 'linux': 'lin'}.get(target_os, 'mac')
+    Coerce a preset's `speechVoices` into MaskConfig voice objects.
+    """
     result: List[Dict[str, Any]] = []
     for entry in voices:
         if isinstance(entry, dict):
             result.append(entry)
-            continue
-        last = entry.rfind(':')
-        if last < 0:
-            continue
-        vtype = entry[last + 1:]
-        before = entry[:last]
-        langsep = before.rfind(':')
-        if langsep < 0:
-            continue
-        lang = before[langsep + 1:]
-        name = before[:langsep]
-        if not name or not lang:
-            continue
-        result.append(
-            {
-                'name': name,
-                'lang': lang,
-                'voiceUri': _voice_uri(os_key, name, lang),
-                'isDefault': False,
-                'isLocalService': vtype == 'local',
-            }
-        )
     if result and not any(v['isDefault'] for v in result):
         result[0]['isDefault'] = True
     return result
@@ -950,11 +924,10 @@ def _build_init_script(values: Dict[str, Any]) -> str:
         )
 
     # Speech voices (comma-separated names). config['voices'] holds MaskConfig
-    # voice objects; extract the display name from each (tolerating a legacy
-    # list of plain name strings).
+    # voice objects; extract the display name from each.
     voices = values.get('speechVoices')
     if voices and len(voices) > 0:
-        names = [v['name'] if isinstance(v, dict) else v for v in voices]
+        names = [v['name'] for v in voices if isinstance(v, dict) and v.get('name')]
         joined = ','.join(names)
         lines.append(
             f'  if (typeof w.setSpeechVoices === "function") w.setSpeechVoices({_json.dumps(joined)});'

@@ -28,7 +28,7 @@ python3 multibuild.py --target linux windows macos --arch x86_64 arm64 i686   # 
 
 Docker is the portable path: `docker build -t camoufox-builder .` then `docker run -v "$(pwd)/dist:/app/dist" camoufox-builder --target <os> --arch <arch>`.
 
-Packaging: `make package-linux|package-macos|package-windows arch=<arch>` (wraps `scripts/package.py`). Launcher (Go): `make build-launcher arch=<arch> os=<os>`.
+Packaging: `make package-linux|package-macos|package-windows arch=<arch>` (wraps `scripts/package.py`).
 
 ## Working with patches (the core workflow)
 
@@ -55,7 +55,6 @@ Low-level equivalents: `make patch ./patches/x.patch`, `make unpatch ./patches/x
 - **`scripts/`** — `patch.py` (the patcher, LibreWolf-derived), `developer.py` (the `make edits` UI), `package.py`, `copy-additions.sh`, `install-deps.sh`.
 - **`pythonlib/`** — the `camoufox` PyPI package: the Playwright-compatible Python interface that generates + injects fingerprints via BrowserForge and launches the binary. `fingerprint-presets-v150.json` holds real scraped fingerprints. This is the user-facing API; the browser binary is the backend.
 - **`jsonvv/`** — JSON-with-validation format library used for `camoucfg.jvv` (config schema).
-- **`legacy/launcher/`** — Go launcher binary.
 - **`assets/`** — `base.mozconfig` and other build inputs.
 
 ## Testing

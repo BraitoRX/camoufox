@@ -1,7 +1,6 @@
 import argparse
 import json
 import os
-import shutil
 import time
 from pathlib import Path
 
@@ -58,15 +57,11 @@ def main():
     src_dir = find_src_dir('.', args.version, args.release)
     moz_target = get_moz_target(target='linux', arch='x86_64')
 
-    launcher_path = os.path.abspath(os.path.join('.', 'legacy', 'launcher', 'dist', 'launch'))
-
     with temp_cd(src_dir):
         print(f'Looking for file: obj-{moz_target}/dist/bin/camoufox-bin')
         with temp_cd(f'obj-{moz_target}/dist/bin'):
             if os.path.exists('camoufox-bin'):
-                # Copy launcher_path to . if we are using camoufox-bin
-                shutil.copy(launcher_path, '.')
-                file_name = 'launch'
+                file_name = 'camoufox-bin'
             elif os.path.exists('firefox-bin'):
                 # Or else just use firefox-bin
                 file_name = 'firefox-bin'
